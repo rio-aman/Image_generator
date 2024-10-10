@@ -5,20 +5,17 @@ const image1 = document.getElementById("image1");
 const image2 = document.getElementById("image2");
 const button = document.getElementById("btn");
 
-// Updated query function to accept a modelId parameter
-async function query(modelId) {
-  // Set the respective images to a loading GIF while fetching the result
-  image1.src = "/loading.gif"; 
-  image2.src = "/loading.gif";
-
+// Updated query function to accept both modelId and prompt as parameters
+async function query(modelId, prompt) {
   try {
-    const response = await fetch(`https://api-inference.huggingface.co/models/${modelId}`|| `https://api-inference.huggingface.co/models/${mode2Id}`, {
+    // Fetch from the API
+    const response = await fetch(`https://api-inference.huggingface.co/models/${modelId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       method: "POST",
-      body: JSON.stringify({ inputs: inputTxt.value }),
+      body: JSON.stringify({ inputs: prompt }),
     });
 
     if (!response.ok) {
@@ -29,18 +26,22 @@ async function query(modelId) {
     return result;
   } catch (error) {
     console.error("Error fetching the image:", error);
-    image1.src = ""; // Clear the image sources if an error occurs
-    image2.src = "";
+    return null;
   }
 }
 
 button.addEventListener("click", async function () {
-  // Fetch and display two different images using different model IDs
-  const modelId1 = "black-forest-labs/FLUX.1-schnell"; // First model ID
-  const modelId2 = "stabilityai/stable-diffusion-xl-base-1.0"; // Replace with the second model ID
+  // Set the images to a loading GIF while waiting for the result
+  image1.src = "/loading.gif";
+  image2.src = "/loading.gif";
 
-  const response1 = await query(modelId1); // Fetch the first image
-  const response2 = await query(modelId2); // Fetch the second image
+  // Fetch and display two different images using the same model ID but different prompts
+  const modelId = "black-forest-labs/FLUX.1-schnell"; // The same model ID for both
+  const prompt1 = inputTxt.value + " variation 1"; // Slightly modify the input to create variation
+  const prompt2 = inputTxt.value + " variation 2"; // Another variation for the second request
+
+  const response1 = await query(modelId, prompt1); // Fetch the first image with the first prompt
+  const response2 = await query(modelId, prompt2); // Fetch the second image with the second prompt
 
   if (response1 && response2) {
     const objectURL1 = URL.createObjectURL(response1); // Create URLs for both image blobs
@@ -51,8 +52,9 @@ button.addEventListener("click", async function () {
 
     image1.height = 570;
     image2.height = 570;
+  } else {
+    console.error("Failed to fetch one or both images.");
+    image1.src = ""; // Clear the image sources if an error occurs
+    image2.src = "";
   }
 });
-
-
-// "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
